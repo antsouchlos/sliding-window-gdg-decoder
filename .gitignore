@@ -2,14 +2,10 @@
 build
 *egg-info
 *.c
-!mod2sparse.c
+*.cpp
 *.o
 *.so
 __pycache__
-LICENSE
-VERSION
-logs*
-slurm-*
-r00*
-itt-python
 .vscode
+.venv
+VERSION
