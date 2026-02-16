@@ -13,12 +13,5 @@ dependencies = [
     "ldpc"
 ]
 
-
-# [project.optional-dependencies]
-# dev = [
-#     "pytest",
-#     # Your dev dependencies
-# ]
-#
-# [tool.setuptools]
-# packages = ["sw_gdg"]
+[tool.setuptools]
+packages = ["sw_gdg"]
