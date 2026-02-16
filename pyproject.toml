@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "wheel", "Cython", "numpy"]
+requires = ["setuptools", "wheel", "cython", "numpy"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -9,14 +9,16 @@ description = "Sliding window with Guided Decimation Guessing Decoding for QLDPC
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
-    # Your runtime dependencies here
+    "numpy",
+    "ldpc"
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest",
-    # Your dev dependencies
-]
 
-[tool.setuptools]
-packages = ["src"]
+# [project.optional-dependencies]
+# dev = [
+#     "pytest",
+#     # Your dev dependencies
+# ]
+#
+# [tool.setuptools]
+# packages = ["sw_gdg"]
