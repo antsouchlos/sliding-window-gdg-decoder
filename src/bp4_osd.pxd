@@ -97,8 +97,8 @@ cdef class bp4_osd:
     cdef void osd_cs_setup_z(self)
     cdef int osd(self, basis)
 
-    cpdef np.ndarray[np.int_t, ndim=2] decode(self, input_vector_x, input_vector_z)
-    cpdef np.ndarray[np.int_t, ndim=2] camel_decode(self, input_vector_x, input_vector_z)
+    cpdef np.ndarray[np.int32_t, ndim=2] decode(self, input_vector_x, input_vector_z)
+    cpdef np.ndarray[np.int32_t, ndim=2] camel_decode(self, input_vector_x, input_vector_z)
     cdef void reset(self)
     cdef double cal_pm(self)
     cdef int vn_set_value(self, vn, value)

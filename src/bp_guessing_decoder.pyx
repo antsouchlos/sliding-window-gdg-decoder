@@ -218,7 +218,7 @@ cdef class bpgdg_decoder(bp_history_decoder):
         self.low_error_mode = low_error_mode
         self.min_converge_depth = 100
     
-    cpdef np.ndarray[np.int_t, ndim=1] decode(self, input_vector):
+    cpdef np.ndarray[np.int32_t, ndim=1] decode(self, input_vector):
         cdef int input_length = input_vector.shape[0]
 
         if input_length == self.m:
@@ -498,7 +498,7 @@ cdef class bpgd_decoder(bp_history_decoder):
 
         self.min_converge_depth = 100
     
-    cpdef np.ndarray[np.int_t, ndim=1] decode(self, input_vector):
+    cpdef np.ndarray[np.int32_t, ndim=1] decode(self, input_vector):
         cdef int input_length = input_vector.shape[0]
 
         if input_length == self.m:

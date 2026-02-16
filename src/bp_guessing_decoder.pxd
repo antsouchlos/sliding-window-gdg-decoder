@@ -87,7 +87,7 @@ cdef class bpgdg_decoder(bp_history_decoder):
     cdef int max_side_depth, max_side_branch_step
     cdef int max_guess, used_guess
 
-    cpdef np.ndarray[np.int_t, ndim=1] decode(self, input_vector)
+    cpdef np.ndarray[np.int32_t, ndim=1] decode(self, input_vector)
     cdef void gdg(self)
     cdef void gdg_multi_thread(self)
     cdef int select_vn(self, side_branch, current_depth)
@@ -102,5 +102,5 @@ cdef class bpgd_decoder(bp_history_decoder):
     cdef int min_converge_depth
     cdef double min_pm
 
-    cpdef np.ndarray[np.int_t, ndim=1] decode(self, input_vector)
+    cpdef np.ndarray[np.int32_t, ndim=1] decode(self, input_vector)
     cdef void gd(self)

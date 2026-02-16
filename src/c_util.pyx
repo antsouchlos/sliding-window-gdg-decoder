@@ -25,8 +25,8 @@ cdef double* numpy2double(np.ndarray[np.float_t, ndim=1] np_array, double* doubl
     for i in range(n): double_array[i] = np_array[i]
     return double_array
 
-cdef np.ndarray[np.int_t, ndim=1] char2numpy(char* char_array, int n):
-    cdef np.ndarray[np.int_t, ndim=1] np_array = np.zeros(n).astype(int)
+cdef np.ndarray[np.int32_t, ndim=1] char2numpy(char* char_array, int n):
+    cdef np.ndarray[np.int32_t, ndim=1] np_array = np.zeros(n).astype(int)
     for i in range(n): np_array[i] = char_array[i]
     return np_array
 
@@ -35,8 +35,8 @@ cdef np.ndarray[np.float_t, ndim=1] double2numpy(double* char_array, int n):
     for i in range(n): np_array[i] = char_array[i]
     return np_array
 
-cdef np.ndarray[np.int_t, ndim=2] stackchar2numpy(char* arr1, char* arr2, int n):
-    cdef np.ndarray[np.int_t, ndim=2] np_array = np.zeros((2, n)).astype(int)
+cdef np.ndarray[np.int32_t, ndim=2] stackchar2numpy(char* arr1, char* arr2, int n):
+    cdef np.ndarray[np.int32_t, ndim=2] np_array = np.zeros((2, n)).astype(int)
     for i in range(n):
         np_array[0,i] = arr1[i]
         np_array[1,i] = arr2[i]

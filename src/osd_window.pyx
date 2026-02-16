@@ -126,7 +126,7 @@ cdef class osd_window:
         self.bp_iteration = 0
 
     cdef void osd_e_setup(self):
-        self.encoding_input_count = long(2 ** self.osd_order)
+        self.encoding_input_count = int(2 ** self.osd_order)
         self.osdw_encoding_inputs = <char**>calloc(self.encoding_input_count, sizeof(char*))
         for i in range(self.encoding_input_count):
             self.osdw_encoding_inputs[i] = decimal_to_binary_reverse(i, self.new_n - self.rank)
@@ -155,7 +155,7 @@ cdef class osd_window:
         assert total_count == self.encoding_input_count
 
 
-    cpdef np.ndarray[np.int_t, ndim=1] decode(self, input_vector):
+    cpdef np.ndarray[np.int32_t, ndim=1] decode(self, input_vector):
         cdef int input_length = input_vector.shape[0]
         cdef int vn
 

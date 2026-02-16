@@ -13,7 +13,7 @@ cdef extern from "bpgd.hpp":
     cdef void mod2sparse_free_cpp(mod2sparse *m)
 
 cdef extern from "mod2sparse_extra.hpp":
-    cdef void mod2sparse_print_terminal (mod2sparse *A)
+    cdef void mod2sparse_print32_terminal (mod2sparse *A)
     cdef int mod2sparse_rank(mod2sparse *A)
     cdef mod2sparse* mod2sparse_allocate_cpp (int u, int v)
     cdef void mod2sparse_copycols_cpp (mod2sparse* m1, mod2sparse* m2, int* cols)
@@ -80,7 +80,7 @@ cdef class osd_window:
     cdef void osd_cs_setup(self)
     cdef int osd(self)
 
-    cpdef np.ndarray[np.int_t, ndim=1] decode(self, input_vector)
+    cpdef np.ndarray[np.int32_t, ndim=1] decode(self, input_vector)
     cdef void reset(self)
     cdef int peel(self)
     cdef int vn_set_value(self, vn, value)
