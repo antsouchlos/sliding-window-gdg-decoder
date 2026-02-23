@@ -155,7 +155,7 @@ cdef class osd_window:
         assert total_count == self.encoding_input_count
 
 
-    cpdef np.ndarray[np.int32_t, ndim=1] decode(self, input_vector):
+    cpdef np.ndarray[np.int64_t, ndim=1] decode(self, input_vector):
         cdef int input_length = input_vector.shape[0]
         cdef int vn
 
