@@ -59,8 +59,10 @@ cdef class bp_history_decoder:
     cdef int max_iter
     cdef double ms_scaling_factor
     cdef int MEM_ALLOCATED
+    cdef bint _warm_start
 
     cdef int bp_decode_llr(self)
+    cpdef void set_cn_to_vn_msgs(self, cn_to_vn)
 
 cdef class bpgdg_decoder(bp_history_decoder):
     cdef BPGD* bpgd
@@ -81,6 +83,7 @@ cdef class bpgdg_decoder(bp_history_decoder):
     cdef bint low_error_mode
     cdef bint always_restart
     cdef int min_converge_depth
+    cdef bint _gdg_ran
 
     cdef int max_step, max_iter_per_step
     cdef int max_tree_depth, max_tree_branch_step
@@ -88,6 +91,7 @@ cdef class bpgdg_decoder(bp_history_decoder):
     cdef int max_guess, used_guess
 
     cpdef np.ndarray[np.int64_t, ndim=1] decode(self, input_vector)
+    cpdef get_cn_to_vn_msgs(self)
     cdef void gdg(self)
     cdef void gdg_multi_thread(self)
     cdef int select_vn(self, side_branch, current_depth)

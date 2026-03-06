@@ -1,6 +1,6 @@
 # distutils: language = c++
 import numpy as np
-from scipy.sparse import spmatrix
+from scipy.sparse import spmatrix, csr_matrix
 
 cdef class bp_history_decoder:
     def __cinit__(self, parity_check_matrix, **kwargs):
@@ -9,6 +9,7 @@ cdef class bp_history_decoder:
         ms_scaling_factor = kwargs.get("ms_scaling_factor", 1.0)
 
         self.MEM_ALLOCATED = False
+        self._warm_start = False
         if isinstance(parity_check_matrix, np.ndarray) or isinstance(parity_check_matrix, spmatrix):
             pass
         else:
@@ -45,6 +46,7 @@ cdef class bp_history_decoder:
         if channel_probs[0] != None:
             for vn in range(self.n): self.channel_llr[vn] = log((1-channel_probs[vn]) / channel_probs[vn])
 
+    # TODO: Check that the new funcionality in here does what it's supposed to
     cdef int bp_decode_llr(self): # messages in log-likelihood ratio (LLR) form. CN update rule: min sum 
         cdef mod2entry *e
         cdef int cn, vn, iteration, sgn
@@ -52,12 +54,30 @@ cdef class bp_history_decoder:
         cdef double temp, alpha
 
         # initialisation
-        for vn in range(self.n):
-            e = mod2sparse_first_in_col(self.H, vn)
-            llr = self.channel_llr[vn]
-            while not mod2sparse_at_end(e):
-                e.bit_to_check = llr
-                e = mod2sparse_next_in_col(e)
+        if self._warm_start:
+            self._warm_start = False
+            # VN update using pre-set check_to_bit: propagates warm-start messages
+            # into bit_to_check before the first CN update overwrites check_to_bit.
+            for vn in range(self.n):
+                e = mod2sparse_first_in_col(self.H, vn)
+                temp = self.channel_llr[vn]
+                while not mod2sparse_at_end(e):
+                    e.bit_to_check = temp
+                    temp += e.check_to_bit
+                    e = mod2sparse_next_in_col(e)
+                e = mod2sparse_last_in_col(self.H, vn)
+                temp = 0.0
+                while not mod2sparse_at_end(e):
+                    e.bit_to_check += temp
+                    temp += e.check_to_bit
+                    e = mod2sparse_prev_in_col(e)
+        else:
+            for vn in range(self.n):
+                e = mod2sparse_first_in_col(self.H, vn)
+                llr = self.channel_llr[vn]
+                while not mod2sparse_at_end(e):
+                    e.bit_to_check = llr
+                    e = mod2sparse_next_in_col(e)
 
         for iteration in range(self.max_iter):
             self.bp_iteration += 1
@@ -139,8 +159,23 @@ cdef class bp_history_decoder:
         return 0
 
 
+    cpdef void set_cn_to_vn_msgs(self, cn_to_vn):
+        cdef mod2entry* coeff
+        cdef int vn_idx, cn_idx
+        cdef double[:, :] cn_to_vn_dense = np.array(cn_to_vn.todense(), dtype=np.float64)
+
+        for vn_idx in range(self.n):
+            coeff = mod2sparse_first_in_col(self.H, vn_idx)
+
+            while not mod2sparse_at_end(coeff):
+                cn_idx = coeff.row
+                coeff.check_to_bit = cn_to_vn_dense[cn_idx, vn_idx]
+                coeff = mod2sparse_next_in_col(coeff)
+
+        self._warm_start = True
+
     def __dealloc__(self):
-        
+
         if self.MEM_ALLOCATED:
             free(self.synd)
             free(self.bp_decoding_synd)
@@ -171,6 +206,7 @@ cdef class bpgdg_decoder(bp_history_decoder):
         low_error_mode = kwargs.get("low_error_mode", False)
 
         self.MEM_ALLOCATED = False
+        self._gdg_ran = False
 
         self.max_iter_per_step = max_iter_per_step
         self.max_step = max_step
@@ -223,6 +259,7 @@ cdef class bpgdg_decoder(bp_history_decoder):
 
         if input_length == self.m:
             self.synd = numpy2char(input_vector, self.synd)
+            self._gdg_ran = False
             if self.bp_decode_llr():
                 self.converge = True
                 return char2numpy(self.bp_decoding, self.n)
@@ -255,6 +292,7 @@ cdef class bpgdg_decoder(bp_history_decoder):
         # if BP doesn't converge, run GDG post-processing
         cdef int i, j, vn, cn, current_depth = 0, temp_converge
         cdef double pm = 0.0
+        self._gdg_ran = True
         self.converge = False
         for vn in range(self.n):
             history = self.log_prob_ratios[vn]
@@ -441,6 +479,25 @@ cdef class bpgdg_decoder(bp_history_decoder):
             return -1
         return 0
 
+    cpdef get_cn_to_vn_msgs(self):
+        cdef mod2entry* coeff
+        cdef int vn_idx, vn_mapped_idx, cn_idx 
+        row_idcs, col_idcs, data = [], [], []
+
+        for vn_idx in range(self.new_n):
+            coeff = mod2sparse_first_in_col(self.bpgd.pcm, vn_idx)
+            vn_mapped_idx = self.cols[vn_idx] if self._gdg_ran else vn_idx
+
+            while not mod2sparse_at_end(coeff):
+                cn_idx = coeff.row
+                row_idcs.append(cn_idx)
+                col_idcs.append(vn_mapped_idx)
+                data.append(coeff.check_to_bit)
+
+                coeff = mod2sparse_next_in_col(coeff)
+
+        return csr_matrix((data, (row_idcs, col_idcs)), shape=(self.m, self.n))
+
     def __dealloc__(self):
         
         if self.MEM_ALLOCATED:
@@ -561,10 +618,31 @@ cdef class bpgd_decoder(bp_history_decoder):
 
 
     def __dealloc__(self):
-        
+
         if self.MEM_ALLOCATED:
             free(self.bpgd_error)
             free(self.llr_sum)
             free(self.cols)
 
             del self.bpgd
+
+
+class BpgdgDecoderInterface:
+    """Python interface for bpgdg_decoder matching the InnerDecoderBase convention:
+    init(H, cn_to_vn_msg, channel_llrs) / decode(syndrome) / get_cn_to_vn_msg().
+
+    channel_llrs are log-likelihood ratios log(P(x=0)/P(x=1)); they are
+    converted to channel_probs internally before constructing the decoder.
+    """
+
+    def __init__(self, H, channel_probs, **kwargs):
+        self._decoder = bpgdg_decoder(H, channel_probs=channel_probs, **kwargs)
+
+    def set_cn_to_vn_msgs(self, cn_to_vn_msg):
+        self._decoder.set_cn_to_vn_msgs(cn_to_vn_msg)
+
+    def get_cn_to_vn_msgs(self):
+        return self._decoder.get_cn_to_vn_msgs()
+
+    def decode(self, syndrome):
+        return self._decoder.decode(syndrome)
